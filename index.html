@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Agent Dashboard — ZuniMove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14161A;
+    --panel: #22262C;
+    --panel-2: #292E35;
+    --line: #34393F;
+    --text: #EDEDE8;
+    --text-dim: #9CA3AB;
+    --accent: #C97A3D;
+    --accent-dim: #8C562A;
+    --teal: #4FA8A0;
+    --danger: #C9583D;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    display:flex;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:600;
+    letter-spacing:0.2px;
+  }
+
+  /* ---- Rail ---- */
+  .rail{
+    width:220px;
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    padding:24px 0;
+    flex-shrink:0;
+  }
+  .brand{
+    padding:0 20px 24px 20px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:12px;
+  }
+  .brand .display{ font-size:22px; line-height:1; }
+  .brand .sub{ color:var(--text-dim); font-size:12px; margin-top:4px; }
+
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 20px;
+    cursor:pointer;
+    color:var(--text-dim);
+    border-left:3px solid transparent;
+    font-size:14.5px;
+    transition:background .15s ease;
+  }
+  .nav-item:hover{ background:var(--panel-2); color:var(--text); }
+  .nav-item.active{
+    color:var(--text);
+    border-left:3px solid var(--accent);
+    background:var(--panel-2);
+  }
+  .nav-item .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--text-dim);
+    flex-shrink:0;
+  }
+  .nav-item.active .dot{ background:var(--accent); }
+
+  /* ---- Main ---- */
+  .main{ flex:1; padding:32px 40px; overflow-y:auto; }
+  .topbar{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom:28px; flex-wrap:wrap; gap:16px;
+  }
+  .topbar h1{ font-size:32px; }
+  .topbar .meta{ color:var(--text-dim); font-size:13px; margin-top:4px; }
+
+  .stat-strip{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:32px;
+  }
+  .stat{
+    background:var(--panel);
+    padding:18px 20px;
+  }
+  .stat .num{ font-family:'Barlow Condensed'; font-size:30px; font-weight:600; }
+  .stat .label{ color:var(--text-dim); font-size:12.5px; margin-top:2px; }
+  .stat .num.accent{ color:var(--accent); }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .panel h2{ font-size:20px; margin-bottom:4px; }
+  .panel .desc{ color:var(--text-dim); font-size:13px; margin-bottom:18px; }
+
+  .row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 0; border-bottom:1px solid var(--line); gap:16px;
+  }
+  .row:last-child{ border-bottom:none; }
+  .row .left{ flex:1; min-width:0; }
+  .row .cap{
+    font-size:13.5px; color:var(--text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .row .sub{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .pill{
+    font-size:11.5px;
+    padding:3px 10px;
+    border-radius:20px;
+    background:var(--panel-2);
+    color:var(--text-dim);
+    white-space:nowrap;
+  }
+  .pill.accent{ background:rgba(201,122,61,0.15); color:var(--accent); }
+  .pill.teal{ background:rgba(79,168,160,0.15); color:var(--teal); }
+
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:900px){ .grid-2{ grid-template-columns:1fr; } .rail{ display:none; } }
+
+  .day-tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .day-tab{
+    padding:6px 14px; border-radius:8px; font-size:13px;
+    background:var(--panel-2); color:var(--text-dim); cursor:pointer;
+  }
+  .day-tab.active{ background:var(--accent); color:#14161A; font-weight:600; }
+
+  .badge-note{
+    font-size:12px; color:var(--teal); background:rgba(79,168,160,0.1);
+    border:1px solid rgba(79,168,160,0.3); padding:8px 12px; border-radius:8px;
+    margin-bottom:16px;
+  }
+
+  .empty{ color:var(--text-dim); font-size:13px; padding:20px 0; text-align:center; }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--panel-2); border-radius:8px; }
+</style>
+</head>
+<body>
+
+<div class="rail" id="rail">
+  <div class="brand">
+    <div class="display">ZuniMove</div>
+    <div class="sub">Content Agent Dashboard</div>
+  </div>
+  <div id="nav"></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1 id="pageTitle">Overview</h1>
+      <div class="meta" id="pulledAt">Loading data…</div>
+    </div>
+  </div>
+
+  <div class="stat-strip" id="statStrip"></div>
+  <div id="content"></div>
+</div>
+
+<script>
+const AGENTS = [
+  { id: "overview",  label: "Overview" },
+  { id: "ideator",   label: "Ideator" },
+  { id: "hooks",     label: "Hook & Script" },
+  { id: "planner",   label: "Planner" },
+  { id: "analyst",   label: "Analyst" },
+  { id: "dm",        label: "DM Manager" },
+];
+
+let DATA = null;
+let active = "overview";
+
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+}
+
+function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+function renderNav(){
+  const nav = document.getElementById("nav");
+  nav.innerHTML = AGENTS.map(a => `
+    <div class="nav-item ${a.id===active?'active':''}" data-id="${a.id}">
+      <span class="dot"></span>${a.label}
+    </div>`).join("");
+  nav.querySelectorAll(".nav-item").forEach(el=>{
+    el.addEventListener("click", ()=>{ active = el.dataset.id; render(); });
+  });
+}
+
+function selfAccount(){ return DATA.accounts.find(a=>a.is_self); }
+function competitorAccounts(){ return DATA.accounts.filter(a=>!a.is_self); }
+
+function renderStatStrip(){
+  const self = selfAccount();
+  const allPosts = self.posts;
+  const avgLikes = avg(allPosts.map(p=>p.likesCount||0));
+  const avgComments = avg(allPosts.map(p=>p.commentsCount||0));
+  const totalCompPosts = competitorAccounts().reduce((s,a)=>s+a.post_count,0);
+
+  const stats = [
+    { num: DATA.accounts.reduce((s,a)=>s+a.post_count,0), label: "Total posts tracked" },
+    { num: self.post_count, label: "Your posts" },
+    { num: avgLikes.toFixed(1), label: "Your avg likes/post", accent:true },
+    { num: avgComments.toFixed(1), label: "Your avg comments/post" },
+    { num: competitorAccounts().length, label: "Competitors tracked" },
+    { num: totalCompPosts, label: "Competitor posts pulled" },
+  ];
+  document.getElementById("statStrip").innerHTML = stats.map(s=>`
+    <div class="stat">
+      <div class="num ${s.accent?'accent':''}">${s.num}</div>
+      <div class="label">${s.label}</div>
+    </div>`).join("");
+}
+
+/* ---------- OVERVIEW ---------- */
+function renderOverview(){
+  const self = selfAccount();
+  const comps = competitorAccounts();
+  return `
+    <div class="panel">
+      <h2>What's tracked</h2>
+      <div class="desc">Real Instagram data pulled via Apify — refresh by re-running the scraper.</div>
+      ${[self, ...comps].map(a=>`
+        <div class="row">
+          <div class="left">
+            <div class="cap">@${a.handle} ${a.is_self ? '<span class="pill accent">You</span>' : ''}</div>
+            <div class="sub">${a.post_count} posts pulled</div>
+          </div>
+        </div>`).join("")}
+    </div>
+  `;
+}
+
+/* ---------- IDEATOR ---------- */
+function renderIdeator(){
+  const self = selfAccount();
+  const comps = competitorAccounts();
+
+  const selfTags = new Set();
+  self.posts.forEach(p => (p.hashtags||[]).forEach(t => selfTags.add(t.toLowerCase())));
+
+  const compTagCounts = {};
+  comps.forEach(acc => acc.posts.forEach(p => (p.hashtags||[]).forEach(t=>{
+    const key = t.toLowerCase();
+    compTagCounts[key] = (compTagCounts[key]||0) + 1;
+  })));
+
+  const gaps = Object.entries(compTagCounts)
+    .filter(([tag]) => !selfTags.has(tag))
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,10);
+
+  return `
+    <div class="panel">
+      <h2>Content gaps</h2>
+      <div class="desc">Themes/hashtags your competitors use often that you haven't touched yet.</div>
+      ${gaps.length ? gaps.map(([tag,count])=>`
+        <div class="row">
+          <div class="left">
+            <div class="cap">#${tag}</div>
+            <div class="sub">Used in ${count} competitor post${count>1?'s':''}</div>
+          </div>
+          <span class="pill accent">Idea</span>
+        </div>`).join("") : '<div class="empty">No clear gaps found — your hashtag coverage overlaps well with competitors.</div>'}
+    </div>
+  `;
+}
+
+/* ---------- HOOK & SCRIPT ---------- */
+function renderHooks(){
+  const comps = competitorAccounts();
+  const allCompPosts = comps.flatMap(a => a.posts.map(p => ({...p, handle:a.handle})));
+  const top = allCompPosts
+    .filter(p => p.caption)
+    .sort((a,b)=> (b.likesCount||0) - (a.likesCount||0))
+    .slice(0,5);
+
+  return `
+    <div class="panel">
+      <h2>Top-performing hooks (competitors)</h2>
+      <div class="desc">Highest-engagement opening lines worth studying — write your own version, don't copy verbatim.</div>
+      ${top.map(p=>{
+        const firstLine = (p.caption||"").split("\\n")[0].slice(0,110);
+        return `
+        <div class="row">
+          <div class="left">
+            <div class="cap">"${firstLine}${firstLine.length===110?'…':''}"</div>
+            <div class="sub">@${p.handle} · ${p.likesCount||0} likes · ${p.commentsCount||0} comments</div>
+          </div>
+          <span class="pill teal">${p.type}</span>
+        </div>`;
+      }).join("")}
+    </div>
+    <div class="panel">
+      <h2>Hook templates to try</h2>
+      <div class="desc">Generic structures pulled from what's working in your niche right now.</div>
+      <div class="row"><div class="left"><div class="cap">"[Problem] shouldn't slow you down. Here's how we fix it."</div></div></div>
+      <div class="row"><div class="left"><div class="cap">"It starts here." + one-line transformation statement</div></div></div>
+      <div class="row"><div class="left"><div class="cap">"Introducing [Product] — powered by [differentiator]."</div></div></div>
+    </div>
+  `;
+}
+
+/* ---------- PLANNER ---------- */
+function renderPlanner(){
+  const self = selfAccount();
+  const dayEngagement = {};
+  self.posts.forEach(p=>{
+    if(!p.timestamp) return;
+    const day = new Date(p.timestamp).toLocaleDateString(undefined,{weekday:'long'});
+    const eng = (p.likesCount||0) + (p.commentsCount||0);
+    if(!dayEngagement[day]) dayEngagement[day] = [];
+    dayEngagement[day].push(eng);
+  });
+  const dayScores = Object.entries(dayEngagement).map(([day,vals])=>({day, avg: avg(vals)}));
+  dayScores.sort((a,b)=>b.avg-a.avg);
+  const bestDays = dayScores.slice(0,3).map(d=>d.day);
+
+  const week = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  const ideas = ["Behind-the-scenes install footage","Customer problem → solution story","New product/feature spotlight",
+                 "Industry stat or myth-bust","Team/process highlight","Customer testimonial or review","Weekly recap / soft CTA"];
+
+  return `
+    <div class="panel">
+      <h2>Suggested posting calendar</h2>
+      <div class="desc">
+        ${bestDays.length ? `Your historical best-engagement days: <b>${bestDays.join(", ")}</b>. Prioritize posting on these.` : 'Not enough post history yet to detect a best-day pattern — plan below is a general default.'}
+      </div>
+      ${week.map((day,i)=>`
+        <div class="row">
+          <div class="left">
+            <div class="cap">${day}${bestDays.includes(day) ? ' <span class="pill accent">Best day</span>' : ''}</div>
+            <div class="sub">${ideas[i]}</div>
+          </div>
+        </div>`).join("")}
+    </div>
+  `;
+}
+
+/* ---------- ANALYST ---------- */
+function renderAnalyst(){
+  const self = selfAccount();
+  const comps = competitorAccounts();
+
+  const selfAvgLikes = avg(self.posts.map(p=>p.likesCount||0));
+  const selfAvgComments = avg(self.posts.map(p=>p.commentsCount||0));
+
+  const compRows = comps.map(acc=>{
+    const al = avg(acc.posts.map(p=>p.likesCount||0));
+    const ac = avg(acc.posts.map(p=>p.commentsCount||0));
+    return { handle: acc.handle, al, ac, n: acc.post_count };
+  });
+
+  const topPost = [...self.posts].sort((a,b)=>(b.likesCount||0)-(a.likesCount||0))[0];
+
+  return `
+    <div class="grid-2">
+      <div class="panel">
+        <h2>Your performance</h2>
+        <div class="row"><div class="left"><div class="cap">Avg likes/post</div></div><span class="pill accent">${selfAvgLikes.toFixed(1)}</span></div>
+        <div class="row"><div class="left"><div class="cap">Avg comments/post</div></div><span class="pill">${selfAvgComments.toFixed(1)}</span></div>
+        <div class="row"><div class="left"><div class="cap">Posts analyzed</div></div><span class="pill">${self.post_count}</span></div>
+        ${topPost ? `
+        <div class="row">
+          <div class="left">
+            <div class="cap">Best post: "${(topPost.caption||"").split("\\n")[0].slice(0,70)}"</div>
+            <div class="sub">${topPost.likesCount||0} likes · ${topPost.commentsCount||0} comments</div>
+          </div>
+        </div>` : ''}
+      </div>
+      <div class="panel">
+        <h2>Competitor benchmark</h2>
+        ${compRows.map(c=>`
+          <div class="row">
+            <div class="left">
+              <div class="cap">@${c.handle}</div>
+              <div class="sub">${c.n} posts analyzed</div>
+            </div>
+            <span class="pill teal">${c.al.toFixed(1)} avg likes</span>
+          </div>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- DM MANAGER (sample/stub) ---------- */
+function renderDM(){
+  const sample = [
+    { from:"@industrial_buyer_92", msg:"Do you ship conveyor belts outside India?", category:"Sales inquiry" },
+    { from:"@factory_ops_rk", msg:"What's the price for a 10m belt, chevron type?", category:"Pricing" },
+    { from:"@random_spam_acc", msg:"Check out my page for free followers!!", category:"Spam" },
+    { from:"@mohd.farhan88", msg:"Great video, how long does installation take?", category:"Support / general" },
+  ];
+  return `
+    <div class="badge-note">
+      This module needs Instagram's official Messaging API (Meta Business) to read real DMs — Apify's scraper only sees public posts.
+      Below is the triage logic running on sample messages so you can see how it categorizes and drafts replies once connected.
+    </div>
+    <div class="panel">
+      <h2>DM triage (sample data)</h2>
+      <div class="desc">Once connected, this replaces the sample messages with your live inbox automatically.</div>
+      ${sample.map(m=>`
+        <div class="row">
+          <div class="left">
+            <div class="cap">${m.from}: "${m.msg}"</div>
+          </div>
+          <span class="pill ${m.category==='Spam' ? '' : 'accent'}">${m.category}</span>
+        </div>`).join("")}
+    </div>
+  `;
+}
+
+function render(){
+  renderNav();
+  document.getElementById("pageTitle").textContent = AGENTS.find(a=>a.id===active).label;
+  const map = {
+    overview: renderOverview, ideator: renderIdeator, hooks: renderHooks,
+    planner: renderPlanner, analyst: renderAnalyst, dm: renderDM
+  };
+  document.getElementById("content").innerHTML = map[active]();
+}
+
+fetch("data.json")
+  .then(r=>{
+    if(!r.ok) throw new Error("data.json not found — run it from the dashboard folder via a local server.");
+    return r.json();
+  })
+  .then(data=>{
+    DATA = data;
+    document.getElementById("pulledAt").textContent = `Data pulled: ${fmtDate(data.pulled_at)}`;
+    renderStatStrip();
+    render();
+  })
+  .catch(err=>{
+    document.getElementById("content").innerHTML = `<div class="panel"><div class="empty">${err.message}</div></div>`;
+    document.getElementById("pulledAt").textContent = "Could not load data.json";
+  });
+</script>
+</body>
+</html>
